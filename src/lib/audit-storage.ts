@@ -252,7 +252,7 @@ export async function fetchAuditsListFromApi(options?: {
     const res = await fetch(`/api/audits?${params.toString()}`);
     if (res.ok) {
       const data = await res.json();
-      if (data.success && Array.isArray(data.audits)) {
+      if (data.success && Array.isArray(data.audits) && (data.total > 0 || data.audits.length > 0)) {
         return {
           audits: data.audits,
           total: typeof data.total === "number" ? data.total : data.audits.length,

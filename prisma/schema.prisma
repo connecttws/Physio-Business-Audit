@@ -4,7 +4,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
-  schemas   = ["physio_audit", "public", "auth"]
+  schemas   = ["business_audit", "public", "auth"]
 }
 
 generator client {
@@ -54,5 +54,6 @@ model PhysioAudit {
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
-  @@schema("physio_audit")
+  @@schema("business_audit")
+  @@map("physio_audit")
 }
