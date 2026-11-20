@@ -802,6 +802,24 @@ export function cleanIndianMobile(phone?: string): string {
   return digits;
 }
 
+export function cleanPhoneNumber(phone?: string): string {
+  if (!phone) return "";
+  let digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) {
+    digits = "91" + digits;
+  }
+  return digits;
+}
+
+export function formatWhatsAppUrl(rawPhone: string, message: string): string {
+  const cleanNumber = cleanPhoneNumber(rawPhone);
+  const encodedText = encodeURIComponent(message);
+  if (cleanNumber && cleanNumber.length >= 10) {
+    return `https://wa.me/${cleanNumber}?text=${encodedText}`;
+  }
+  return `https://wa.me/?text=${encodedText}`;
+}
+
 export const CLINIC_SUPPORT_PHONE = "918368052044";
 export const CLINIC_DISPLAY_PHONE = "+91 8368052044";
 

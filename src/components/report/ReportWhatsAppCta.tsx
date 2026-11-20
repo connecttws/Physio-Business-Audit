@@ -7,7 +7,6 @@ import {
   CLINIC_SUPPORT_PHONE,
   CLINIC_DISPLAY_PHONE,
 } from "@/lib/physio-data";
-import { encodeAuditForUrl } from "@/lib/audit-storage";
 
 interface ReportWhatsAppCtaProps {
   record: PhysioAuditRecord;
@@ -16,12 +15,11 @@ interface ReportWhatsAppCtaProps {
 export function ReportWhatsAppCta({ record }: ReportWhatsAppCtaProps) {
   const handleConnectWhatsApp = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const encodedPayload = encodeAuditForUrl(record);
-    const reportUrl = `${origin}/report?id=${record.id}${encodedPayload ? `&d=${encodedPayload}` : ""}`;
+    const shortUrl = `${origin}/r/${record.id}`;
 
     const text =
       `Hi KineticFix Clinical Team! I reviewed my Physiotherapy & Biomechanical Report for *${record.patient.name}* (Dysfunction Score: ${record.totalScore}/100, Track: ${record.trackBadge}, Ref: ${record.id}).\n\n` +
-      `*My Diagnostic Report:* ${reportUrl}\n\n` +
+      `*My Diagnostic Report:* ${shortUrl}\n\n` +
       `I would like to discuss starting the recommended *3-Phase Rehabilitation Protocol* and schedule my 1-on-1 hands-on clinical evaluation. Please let me know your available slots!`;
 
     window.open(

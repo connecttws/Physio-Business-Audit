@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Printer, Share2, Copy, Check, MessageSquare } from "lucide-react";
-import { PhysioAuditRecord } from "@/lib/physio-data";
-import { encodeAuditForUrl } from "@/lib/audit-storage";
+import { ArrowLeft, Printer, Copy, Check, MessageSquare } from "lucide-react";
+import { PhysioAuditRecord, formatWhatsAppUrl } from "@/lib/physio-data";
 
 interface ReportHeaderProps {
   record: PhysioAuditRecord;
@@ -13,15 +12,12 @@ interface ReportHeaderProps {
 export function ReportHeader({ record }: ReportHeaderProps) {
   const [copied, setCopied] = useState(false);
 
-  const encodedPayload = encodeAuditForUrl(record);
-  const reportUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/report?id=${record.id}${encodedPayload ? `&d=${encodedPayload}` : ""}`
-      : `/report?id=${record.id}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const shortUrl = `${origin}/r/${record.id}`;
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(reportUrl);
+      await navigator.clipboard.writeText(shortUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
@@ -34,8 +30,15 @@ export function ReportHeader({ record }: ReportHeaderProps) {
   };
 
   const handleWhatsAppShare = () => {
-    const text = `KineticFix Clinical Assessment for ${record.patient.name} (${record.trackBadge}) - Score: ${record.totalScore}/100. Review report: ${reportUrl}`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
+    const text =
+      `*KineticFix • Clinical Physiotherapy & Biomechanical Report*\n\n` +
+      `*Patient:* ${record.patient.name}\n` +
+      `*Track:* ${record.trackBadge}\n` +
+      `*Score:* ${record.totalScore} / 100 — ${record.status.title}\n\n` +
+      `*View Full Diagnostic Report Online:*\n${shortUrl}\n\n` +
+      `_KineticFix Clinical Rehabilitation Protocol_`;
+    const waUrl = formatWhatsAppUrl("", text);
+    window.open(waUrl, "_blank", "noopener,noreferrer");
   };
 
   return (

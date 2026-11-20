@@ -21,8 +21,9 @@ import {
   PhysioAuditRecord,
   isValidIndianMobile,
   cleanIndianMobile,
+  formatWhatsAppUrl,
 } from "@/lib/physio-data";
-import { saveAuditToStorage, encodeAuditForUrl } from "@/lib/audit-storage";
+import { saveAuditToStorage } from "@/lib/audit-storage";
 
 interface AuditCompleteStepProps {
   record: PhysioAuditRecord;
@@ -42,12 +43,11 @@ export function AuditCompleteStep({
   const [phoneError, setPhoneError] = useState("");
   const [wasSent, setWasSent] = useState(false);
 
-  // Generate URL for cross-device sharing (uses ?id= and encodes ?d= for immediate reliability)
-  const encodedPayload = encodeAuditForUrl(record);
+  // Clean short report URL (/r/[id])
   const reportUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/report?id=${record.id}${encodedPayload ? `&d=${encodedPayload}` : ""}`
-      : `/report?id=${record.id}`;
+      ? `${window.location.origin}/r/${record.id}`
+      : `/r/${record.id}`;
 
   const isPhoneValid = isValidIndianMobile(patientPhone);
 
@@ -108,18 +108,16 @@ export function AuditCompleteStep({
       return;
     }
 
-    const cleanNum = cleanIndianMobile(patientPhone);
-    const fullIntlNumber = `91${cleanNum}`;
     const text = generateWhatsAppMessage();
-    const url = `https://api.whatsapp.com/send?phone=${fullIntlNumber}&text=${encodeURIComponent(text)}`;
-
-    window.open(url, "_blank");
+    const waUrl = formatWhatsAppUrl(patientPhone, text);
+    window.open(waUrl, "_blank", "noopener,noreferrer");
     setWasSent(true);
   };
 
   const handleShareGeneral = () => {
     const text = `KineticFix Clinical Assessment for ${record.patient.name} (${record.trackBadge}) - Score: ${record.totalScore}/100. Review report: ${reportUrl}`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
+    const waUrl = formatWhatsAppUrl("", text);
+    window.open(waUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -277,7 +275,7 @@ export function AuditCompleteStep({
       {/* 3. Action Buttons */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
         <Link
-          href={`/report?id=${record.id}${encodedPayload ? `&d=${encodedPayload}` : ""}`}
+          href={`/report?id=${record.id}`}
           className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer"
         >
           <FileText className="w-4 h-4" />
