@@ -1,0 +1,58 @@
+// Prisma schema for KineticFix Clinical Physiotherapy & Biomechanical Audit
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["physio_audit", "public", "auth"]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+model PhysioAudit {
+  id                    String    @id @default(cuid())
+  slug                  String?   @unique @db.VarChar(150)
+  
+  // Patient Profile
+  patientName           String    @map("patient_name") @db.VarChar(255)
+  phone                 String?   @db.VarChar(50)
+  whatsappNumber        String?   @map("whatsapp_number") @db.VarChar(50)
+  age                   String?   @db.VarChar(20)
+  occupation            String?   @db.VarChar(255)
+  auditorName           String    @default("Dr. KineticFix") @map("auditor_name") @db.VarChar(150)
+
+  // Track & Clinical Screens
+  trackId               String    @map("track_id") @db.VarChar(50)
+  trackBadge            String    @map("track_badge") @db.VarChar(100)
+  redFlag               String    @default("safe") @map("red_flag") @db.VarChar(20)
+  pastHistory           String    @default("pills_heat") @map("past_history") @db.VarChar(50)
+
+  // Scores & Diagnostics
+  totalScore            Int       @map("total_score")
+  maxScore              Int       @default(100) @map("max_score")
+  percentage            Int       @default(0)
+  statusTitle           String    @map("status_title") @db.VarChar(150)
+  statusLevel           String    @map("status_level") @db.VarChar(50)
+  statusSummary         String    @map("status_summary") @db.Text
+  consultationScript    String    @map("consultation_script") @db.Text
+
+  // Structured Payloads
+  pillars               Json
+  answers               Json
+  flags                 Json
+  rehabProtocol         Json?     @map("rehab_protocol")
+
+  // Engagement & Lifecycle
+  viewCount             Int       @default(0) @map("view_count")
+  lastViewedAt          DateTime? @map("last_viewed_at")
+  status                String    @default("active") @db.VarChar(50)
+
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@schema("physio_audit")
+}
