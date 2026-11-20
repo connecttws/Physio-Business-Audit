@@ -25,8 +25,10 @@ export default function PhysioAuditPage() {
   });
 
   const [selectedTrack, setSelectedTrack] = useState<string>("lumbar");
-  const [redFlag, setRedFlag] = useState<"safe" | "alert">("safe");
-  const [pastHistory, setPastHistory] = useState<"pills_heat" | "short_physio" | "first_time">("pills_heat");
+  const [redFlag, setRedFlag] = useState<"safe" | "alert" | "">("");
+  const [pastHistory, setPastHistory] = useState<
+    "pills_heat" | "short_physio" | "first_time" | ""
+  >("");
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [completedRecord, setCompletedRecord] = useState<PhysioAuditRecord | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -35,22 +37,24 @@ export default function PhysioAuditPage() {
 
   const currentTrackData = TRACK_DATA[selectedTrack] || TRACK_DATA.lumbar;
 
-  // Compute live score dynamically based on track questions
-  const liveScore = useMemo(() => {
-    let sum = 0;
-    let max = 0;
-    currentTrackData.questions.forEach((q) => {
-      const chosenIdx = answers[q.id] ?? 0;
-      const opt = q.options[chosenIdx] || q.options[0];
-      sum += opt.val;
-      max += 50;
-    });
-    return Math.round((sum / max) * 100);
-  }, [answers, currentTrackData]);
-
   // Answered questions in the active track
   const answeredCount = useMemo(() => {
     return currentTrackData.questions.filter((q) => answers[q.id] !== undefined).length;
+  }, [answers, currentTrackData]);
+
+  // Compute live score dynamically based strictly on answered track questions
+  const liveScore = useMemo(() => {
+    let sum = 0;
+    let answered = 0;
+    currentTrackData.questions.forEach((q) => {
+      const chosenIdx = answers[q.id];
+      if (chosenIdx !== undefined && q.options[chosenIdx]) {
+        sum += q.options[chosenIdx].val;
+        answered++;
+      }
+    });
+    if (answered === 0) return 0;
+    return Math.round((sum / (answered * 50)) * 100);
   }, [answers, currentTrackData]);
 
   useEffect(() => {
@@ -68,12 +72,34 @@ export default function PhysioAuditPage() {
   const handleSelectTrack = (trackKey: string) => {
     setSelectedTrack(trackKey);
     setPatient((prev) => ({ ...prev, track: trackKey }));
+    // Clear question selections when switching to a different injury track
+    setAnswers({});
   };
 
   const handleGenerateReport = async () => {
     if (!patient.name.trim()) {
       alert("Please enter Patient Full Name before generating the clinical report.");
       window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (!redFlag) {
+      alert("Please complete the Neurological Red Flag Screen in Step 3.");
+      return;
+    }
+
+    if (!pastHistory) {
+      alert("Please select Prior Treatment History in Step 3.");
+      return;
+    }
+
+    const unanswered = currentTrackData.questions.filter(
+      (q) => answers[q.id] === undefined
+    );
+    if (unanswered.length > 0) {
+      alert(
+        `Please complete all 6 clinical checks (${unanswered.length} remaining) before generating the report.`
+      );
       return;
     }
 
@@ -115,8 +141,8 @@ export default function PhysioAuditPage() {
       auditorName: "Dr. KineticFix",
     });
     setSelectedTrack("lumbar");
-    setRedFlag("safe");
-    setPastHistory("pills_heat");
+    setRedFlag("");
+    setPastHistory("");
     setAnswers({});
     setCompletedRecord(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -151,6 +177,7 @@ export default function PhysioAuditPage() {
             answers={answers}
             onAnswer={handleAnswer}
             onGenerateReport={handleGenerateReport}
+            onResetForm={handleResetAudit}
             currentScore={liveScore}
           />
         ) : (

@@ -145,8 +145,8 @@ export async function saveAudit(
   patient: PatientDetails,
   trackId: string,
   answers: Record<string, number>,
-  redFlag: "safe" | "alert" = "safe",
-  pastHistory: "pills_heat" | "short_physio" | "first_time" = "pills_heat"
+  redFlag: "safe" | "alert" | "" = "safe",
+  pastHistory: "pills_heat" | "short_physio" | "first_time" | "" = "pills_heat"
 ): Promise<PhysioAuditRecord> {
   try {
     const res = await fetch("/api/audits", {

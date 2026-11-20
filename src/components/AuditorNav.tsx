@@ -79,8 +79,8 @@ export function AuditorNav({
                 Score
               </span>
               <div className="flex items-baseline gap-0.5 leading-none mt-1">
-                <span className={`text-base sm:text-lg font-black font-mono ${getScoreColor(currentScore).split(" ")[0]}`}>
-                  {currentScore}
+                <span className={`text-base sm:text-lg font-black font-mono ${answeredCount > 0 ? getScoreColor(currentScore).split(" ")[0] : "text-slate-400"}`}>
+                  {answeredCount > 0 ? currentScore : "—"}
                 </span>
                 <span className="text-[10px] font-semibold text-slate-500 font-mono">
                   /{maxScore}

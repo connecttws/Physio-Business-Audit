@@ -664,8 +664,8 @@ export function calculatePhysioAudit(
   patient: PatientDetails,
   trackId: string,
   answers: Record<string, number>,
-  redFlag: "safe" | "alert" = "safe",
-  pastHistory: "pills_heat" | "short_physio" | "first_time" = "pills_heat",
+  redFlag: "safe" | "alert" | "" = "safe",
+  pastHistory: "pills_heat" | "short_physio" | "first_time" | "" = "pills_heat",
   recordId?: string
 ): PhysioAuditRecord {
   const track = TRACK_DATA[trackId] || TRACK_DATA.lumbar;
@@ -676,16 +676,22 @@ export function calculatePhysioAudit(
 
   // Track questions scoring
   track.questions.forEach((q) => {
-    const selectedIdx = answers[q.id] ?? 0;
-    const opt = q.options[selectedIdx] || q.options[0];
-    totalPoints += opt.val;
-    maxPoints += 50;
-    if (opt.flag) {
-      flags.push(opt.flag);
+    const selectedIdx = answers[q.id];
+    if (selectedIdx !== undefined && q.options[selectedIdx]) {
+      const opt = q.options[selectedIdx];
+      totalPoints += opt.val;
+      maxPoints += 50;
+      if (opt.flag) {
+        flags.push(opt.flag);
+      }
+    } else {
+      // Unanswered question fallback to mid-point
+      maxPoints += 50;
+      totalPoints += 30;
     }
   });
 
-  const percentage = Math.round((totalPoints / maxPoints) * 100);
+  const percentage = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
 
   // Status classification
   let level: "optimal" | "moderate" | "severe" = "optimal";
@@ -714,10 +720,12 @@ export function calculatePhysioAudit(
     const q = track.questions[idx];
     let score = percentage;
     if (q) {
-      const selectedIdx = answers[q.id] ?? 0;
-      const opt = q.options[selectedIdx] || q.options[0];
-      // Normalize option value (10-50) to 0-100 scale: (val / 50) * 100
-      score = Math.round((opt.val / 50) * 100);
+      const selectedIdx = answers[q.id];
+      if (selectedIdx !== undefined && q.options[selectedIdx]) {
+        score = Math.round((q.options[selectedIdx].val / 50) * 100);
+      } else {
+        score = percentage;
+      }
     } else {
       // 5th pillar synthesis
       const offset = (idx % 2 === 0 ? 1 : -1) * (idx * 3);
@@ -759,8 +767,8 @@ export function calculatePhysioAudit(
     trackId: track.id,
     trackTitle: track.title,
     trackBadge: track.badge,
-    redFlag,
-    pastHistory,
+    redFlag: (redFlag === "alert" ? "alert" : "safe") as "safe" | "alert",
+    pastHistory: (pastHistory || "pills_heat") as "pills_heat" | "short_physio" | "first_time",
     answers,
     flags,
     totalScore: percentage,

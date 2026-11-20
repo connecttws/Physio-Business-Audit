@@ -6,7 +6,6 @@ import {
   TRACK_DATA,
   UNIVERSAL_QUESTIONS,
   ClinicalTrack,
-  isValidIndianMobile,
 } from "@/lib/physio-data";
 import {
   User,
@@ -15,11 +14,9 @@ import {
   Calendar,
   AlertTriangle,
   CheckCircle2,
-  Activity,
   ArrowRight,
   ShieldCheck,
-  Stethoscope,
-  Sparkles,
+  RotateCcw,
 } from "lucide-react";
 
 interface ClinicalQuestionnaireProps {
@@ -27,13 +24,14 @@ interface ClinicalQuestionnaireProps {
   onPatientChange: (fields: Partial<PatientDetails>) => void;
   selectedTrack: string;
   onSelectTrack: (trackKey: string) => void;
-  redFlag: "safe" | "alert";
+  redFlag: "safe" | "alert" | "";
   onRedFlagChange: (val: "safe" | "alert") => void;
-  pastHistory: "pills_heat" | "short_physio" | "first_time";
+  pastHistory: "pills_heat" | "short_physio" | "first_time" | "";
   onPastHistoryChange: (val: "pills_heat" | "short_physio" | "first_time") => void;
   answers: Record<string, number>;
   onAnswer: (questionId: string, optionIndex: number) => void;
   onGenerateReport: () => void;
+  onResetForm?: () => void;
   currentScore: number;
 }
 
@@ -49,6 +47,7 @@ export function ClinicalQuestionnaire({
   answers,
   onAnswer,
   onGenerateReport,
+  onResetForm,
   currentScore,
 }: ClinicalQuestionnaireProps) {
   const currentTrackData: ClinicalTrack =
@@ -68,17 +67,28 @@ export function ClinicalQuestionnaire({
         <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
             <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-400 text-[10px] font-mono font-bold uppercase tracking-wider border border-teal-500/30">
               Step 1 · Intake Profile
             </span>
+            {onResetForm && (
+              <button
+                type="button"
+                onClick={onResetForm}
+                className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 font-semibold transition-colors cursor-pointer"
+                title="Clear all fields and restart intake"
+              >
+                <RotateCcw className="w-3 h-3 text-slate-500" />
+                <span>Clear All</span>
+              </button>
+            )}
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
             Patient Demographics & Clinical Intake
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Enter patient details to personalize the biomechanical report and generate a WhatsApp dispatch.
+            Fill in patient details to personalize the biomechanical report and generate a WhatsApp dispatch.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
@@ -234,6 +244,11 @@ export function ClinicalQuestionnaire({
                 ⚠️ Medical Flag Active
               </span>
             )}
+            {redFlag === "safe" && (
+              <span className="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-bold">
+                ✓ Safe for Rehab
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400">
             {UNIVERSAL_QUESTIONS[0].description}
@@ -261,7 +276,7 @@ export function ClinicalQuestionnaire({
                       name="u_redflag"
                       value={opt.value}
                       checked={isSelected}
-                      onChange={() => {}}
+                      onChange={() => onRedFlagChange(opt.value as "safe" | "alert")}
                       className="accent-teal-500"
                     />
                   </div>
@@ -307,7 +322,11 @@ export function ClinicalQuestionnaire({
                       name="u_past"
                       value={opt.value}
                       checked={isSelected}
-                      onChange={() => {}}
+                      onChange={() =>
+                        onPastHistoryChange(
+                          opt.value as "pills_heat" | "short_physio" | "first_time"
+                        )
+                      }
                       className="accent-teal-500"
                     />
                   </div>
@@ -339,19 +358,31 @@ export function ClinicalQuestionnaire({
 
         <div className="space-y-6">
           {currentTrackData.questions.map((q, qIdx) => {
-            const selectedOptIdx = answers[q.id] ?? 0;
+            const selectedOptIdx = answers[q.id];
+            const isAnswered = selectedOptIdx !== undefined;
 
             return (
               <div
                 key={q.id}
-                className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-750 transition-all"
+                className={`p-5 rounded-2xl border transition-all ${
+                  isAnswered
+                    ? "bg-slate-950/70 border-slate-800/80"
+                    : "bg-slate-950/40 border-slate-800/50"
+                }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <h4 className="text-sm font-bold text-slate-100">
-                    {q.label}
+                  <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    <span>{q.label}</span>
+                    {isAnswered && (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 inline" />
+                    )}
                   </h4>
-                  <span className="text-[10px] font-mono text-slate-500">
-                    Q{qIdx + 1}
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
+                    isAnswered
+                      ? "bg-teal-500/10 text-teal-400 border border-teal-500/20"
+                      : "text-slate-500"
+                  }`}>
+                    {isAnswered ? "Answered" : `Check ${qIdx + 1}`}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mb-3.5 leading-relaxed">
@@ -360,7 +391,7 @@ export function ClinicalQuestionnaire({
 
                 <div className="space-y-2">
                   {q.options.map((opt, oIdx) => {
-                    const isChecked = selectedOptIdx === oIdx;
+                    const isChecked = selectedOptIdx !== undefined && selectedOptIdx === oIdx;
 
                     return (
                       <label
@@ -369,8 +400,8 @@ export function ClinicalQuestionnaire({
                         className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all text-xs leading-relaxed ${
                           isChecked
                             ? opt.flag
-                              ? "bg-red-950/40 border-red-500/50 text-red-200 shadow-sm"
-                              : "bg-teal-950/40 border-teal-500/50 text-teal-200 shadow-sm"
+                              ? "bg-red-950/40 border-red-500/50 text-red-200 shadow-sm ring-1 ring-red-500/30"
+                              : "bg-teal-950/40 border-teal-500/50 text-teal-200 shadow-sm ring-1 ring-teal-500/30"
                             : "bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700"
                         }`}
                       >
@@ -378,7 +409,7 @@ export function ClinicalQuestionnaire({
                           type="radio"
                           name={q.id}
                           checked={isChecked}
-                          onChange={() => {}}
+                          onChange={() => onAnswer(q.id, oIdx)}
                           className="mt-0.5 accent-teal-500 shrink-0"
                         />
                         <div className="flex-1">
@@ -403,14 +434,18 @@ export function ClinicalQuestionnaire({
       <div className="sticky bottom-4 z-30 p-4 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-2xl backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-mono font-black text-sm">
-            {currentScore}
+            {answeredTrackCount > 0 ? currentScore : "—"}
           </div>
           <div>
             <div className="text-xs font-bold text-white">
-              Kinetic Dysfunction Score: {currentScore}/100
+              {answeredTrackCount > 0
+                ? `Kinetic Dysfunction Score: ${currentScore}/100`
+                : "Awaiting Diagnostic Answers"}
             </div>
             <div className="text-[11px] text-slate-400">
-              {currentTrackData.badge} · Ready for Clinical Synthesis
+              {answeredTrackCount === 6
+                ? "All 6 checks completed · Ready for Report"
+                : `${answeredTrackCount} of 6 checks completed`}
             </div>
           </div>
         </div>
